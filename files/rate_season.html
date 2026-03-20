@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Атака титанов - Оценка сезонов</title>
+    <link rel="icon" type="image/x-icon" href="files/новбар.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style/indes-style.css">
+    <style>
+        .rating-form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+        .rating-form select, .rating-form input {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .rating-form button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .rating-form button:hover {
+            background: #45a049;
+        }
+        .rating-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .rating-table th, .rating-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        .rating-table th {
+            background: #333;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .stars {
+            color: #ffc107;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="head"> 
+        <img src="files/Attack_on_Titan_Wings_of_Freedom_logo.png">
+    </div>
+</div>
+
+<div class="navbar">
+    <a href="/index.html">Главная</a>
+    <a href="/sesons.html">Сезоны и серии</a>
+    <a href="/rate_season.html" style="background: #4CAF50;">Оценить сезоны</a>
+    <a href="#">Персонажи</a>
+    <a href="#">Манга</a>
+    <a href="https://vk.com/revfinder" class="right">Автор</a>
+</div>
+
+<div class="row">
+    <div class="main">
+        <div class="основной-блок4" style="height:100px;">
+            <h2>Оценка сезонов</h2>
+            <h5>Поставь свою оценку любимому сезону!</h5>
+        </div>
+
+        <!-- Форма для оценки -->
+        <div class="rating-form">
+            <h3>📝 Поставить оценку сезону</h3>
+            <select id="season">
+                <option value="1">1 сезон</option>
+                <option value="2">2 сезон</option>
+                <option value="3">3 сезон</option>
+                <option value="4">4 сезон</option>
+            </select><br>
+            <input type="number" id="grade" min="1" max="10" step="1" value="10" style="width: 100px;">
+            <label>Оценка от 1 до 10</label><br>
+            <button onclick="saveRating()">Сохранить оценку</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <!-- Таблица с текущими оценками -->
+        <h3>📊 Текущий рейтинг сезонов</h3>
+        <table class="rating-table" id="ratingsTable">
+            <thead>
+                <tr><th>Сезон</th><th>Средняя оценка</th><th>Количество голосов</th><th>⭐ Рейтинг</th></tr>
+            </thead>
+            <tbody id="ratingsBody">
+                <tr><td colspan="4">Загрузка...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="side">
+        <h2>О проекте</h2>
+        <div class="fakeimg" style="height:100px; background:#ddd; text-align:center; line-height:100px;">
+            ⭐ Оценка сезонов ⭐
+        </div>
+        <p>Ты можешь оценить каждый сезон аниме от 1 до 10.<br>
+        Оценки сохраняются и отображаются в таблице.</p>
+        <h3>Средний рейтинг аниме:</h3>
+        <div id="totalRating" style="font-size: 24px; color: gold;">—</div>
+    </div>
+</div>
+
+<div class="footer">
+    <h2>Attack on Titan | Фан-сайт с оценками</h2>
+</div>
+
+<script>
+    // Функция загрузки оценок с сервера
+    async function loadRatings() {
+        try {
+            const response = await fetch('get_ratings.php');
+            const data = await response.json();
+            renderTable(data);
+            calculateTotalRating(data);
+        } catch (error) {
+            document.getElementById('ratingsBody').innerHTML = '<tr><td colspan="4">Ошибка загрузки данных</td></tr>';
+        }
+    }
+
+    // Отображение таблицы
+    function renderTable(data) {
+        const tbody = document.getElementById('ratingsBody');
+        tbody.innerHTML = '';
+        
+        const seasons = ['1 сезон', '2 сезон', '3 сезон', '4 сезон'];
+        
+        for (let i = 1; i <= 4; i++) {
+            const seasonData = data[i] || { total: 0, count: 0, avg: 0 };
+            const avg = seasonData.avg || 0;
+            const stars = '⭐'.repeat(Math.round(avg / 2));
+            
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = seasons[i-1];
+            row.insertCell(1).textContent = avg.toFixed(1);
+            row.insertCell(2).textContent = seasonData.count || 0;
+            row.insertCell(3).innerHTML = stars + ` (${avg.toFixed(1)}/10)`;
+            
+            // Цвет ячейки с оценкой
+            if (avg >= 8) row.cells[1].style.color = 'green';
+            else if (avg >= 6) row.cells[1].style.color = 'orange';
+            else row.cells[1].style.color = 'red';
+        }
+    }
+
+    // Подсчет общего рейтинга
+    function calculateTotalRating(data) {
+        let totalSum = 0;
+        let totalCount = 0;
+        
+        for (let i = 1; i <= 4; i++) {
+            if (data[i]) {
+                totalSum += data[i].total;
+                totalCount += data[i].count;
+            }
+        }
+        
+        const avg = totalCount > 0 ? (totalSum / totalCount).toFixed(1) : '—';
+        document.getElementById('totalRating').innerHTML = avg !== '—' ? `${avg} / 10 ⭐` : 'Нет оценок';
+    }
+    // Сохранение оценки
+    async function saveRating() {
+        const season = document.getElementById('season').value;
+        const grade = parseInt(document.getElementById('grade').value);
+        if (grade < 1 || grade > 10) {
+            showStatus('Оценка должна быть от 1 до 10', 'error');
+            return;
+        }
+        try {
+            const response = await fetch('rating.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `season=${season}&grade=${grade}`
+            });
+            const result = await response.json();
+            if (result.success) {
+                showStatus(result.message, 'success');
+                loadRatings(); // обновляем таблицу
+                document.getElementById('grade').value = '10';
+            } else {
+                showStatus(result.message, 'error');
+            }
+        } catch (error) {
+            showStatus('Ошибка соединения с сервером', 'error');
+        }
+    }
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${type}`;
+        statusDiv.style.display = 'block';
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 3000);
+    }
+    // Загрузка при открытии страницы
+    loadRatings();
+</script>
+
+</body>
+</html>
